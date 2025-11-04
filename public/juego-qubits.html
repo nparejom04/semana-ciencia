@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --bg: #0e1530;
+      --text: #f2fbff;
+      --accent: #6ee7ff;
+      --ok: #27e1a7;
+      --sup: #9b8cff;
+    }
+
+    * {
+      box-sizing: border-box
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, Segoe UI, Roboto, Arial;
+      color: var(--text);
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      padding: 12px
+    }
+
+    h1 {
+      font-size: clamp(18px, 3vw, 28px);
+      margin: 6px 0 0;
+      text-align: center
+    }
+
+    .wrap {
+      width: min(880px, 98vw)
+    }
+
+    .hud {
+      display: flex;
+      gap: 8px;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      background: #101a3a;
+      border: 1px solid rgba(255, 255, 255, .1);
+      border-radius: 14px;
+      padding: 10px 12px
+    }
+
+    .pill {
+      background: rgba(255, 255, 255, .06);
+      border: 1px solid rgba(255, 255, 255, .12);
+      border-radius: 999px;
+      padding: 6px 10px
+    }
+
+    .btn {
+      border: 1px solid rgba(255, 255, 255, .18);
+      border-radius: 12px;
+      padding: 8px 12px;
+      cursor: pointer;
+      background: linear-gradient(180deg, rgba(255, 255, 255, .12), rgba(255, 255, 255, .05));
+      color: var(--text)
+    }
+
+    .stage {
+      position: relative;
+      aspect-ratio: 16/9;
+      width: 100%;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, .15);
+      background: radial-gradient(600px 300px at 50% -120px, rgba(110, 231, 255, .18), transparent), #0a1024
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block
+    }
+
+    .footer {
+      display: flex;
+      gap: 10px;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      background: #101a3a;
+      border: 1px solid rgba(255, 255, 255, .1);
+      border-radius: 14px;
+      padding: 10px 12px
+    }
+
+    .legend {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+      font-size: 14px
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, .12)
+    }
+
+    .qs {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #fff, var(--sup))
+    }
+
+    .qb {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #fff, #4ea8ff)
+    }
+
+    .qr {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #fff, #ff6b6b)
+    }
+
+    .mobile {
+      display: none;
+      gap: 8px
+    }
+
+    @media (hover:none) and (pointer:coarse) {
+      .mobile {
+        display: flex
+      }
+    }
+
+    .joy {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-weight: 700;
+      background: linear-gradient(180deg, rgba(255, 255, 255, .12), rgba(255, 255, 255, .05));
+      border: 1px solid rgba(255, 255, 255, .18)
+    }
+
+    .overlay {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+    }
+
+    .card {
+      background: rgba(10, 14, 28, .9);
+      border: 1px solid rgba(255, 255, 255, .15);
+      border-radius: 16px;
+      padding: 18px;
+      width: min(560px, 92%);
+      text-align: center
+    }
+
+    .card h2 {
+      margin: 6px 0
+    }
+
+    .card p {
+      margin: 8px 0
+    }
+  </style>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+</head>
+
+<body>
+  <!-- h1>ATRAPA LOS QUBITS</h1>
+  <h2>Semana de la ciencia - I.E.S. Donoso Cortés - 25/26</h2 -->
+  <div class="wrap">
+    <div class="hud" role="region" aria-label="Panel de puntuación y controles">
+      <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap">
+        <div class="pill" id="score" aria-live="polite">Total medidos: 0</div>
+        <div class="pill" id="blueC" aria-live="polite">Azul (0): 0</div>
+        <div class="pill" id="redC" aria-live="polite">Rojo (1): 0</div>
+        <div class="pill" id="timer" aria-live="polite">Tiempo: 60 s</div>
+      </div>
+      <div style="display:flex; gap:8px; align-items:center">
+        <button class="btn" id="startBtn"><i class="bi bi-play-circle"></i> Jugar / <i class="bi bi-pause-circle"></i>
+          Pausa</button>
+        <button class="btn" id="resetBtn"><i class="bi bi-arrow-repeat"></i> Reiniciar</button>
+      </div>
+    </div>
+
+    <div class="stage" id="stage">
+      <canvas id="game" width="960" height="540" aria-label="Zona de juego"></canvas>
+      <div class="overlay" id="overlay">
+        <div class="card">
+          <h2>Superposición y Medición</h2>
+          <p>Los qubits caen en <b>superposición</b> (bolas <b>moradas</b>), pueden ser <b>0 ó 1</b>.
+          <p>
+          <p>Al atraparlos, hacemos una <b>medición</b>: colapsan a <span style="color:#6ec2ff">Azul (0)</span> o <span
+              style="color:#ff8a8a">Rojo (1)</span> y lo contamos.</p>
+              <br>
+          <p><b>PC:</b> Flechas <i class="bi bi-arrow-left-square"></i> <i class="bi bi-arrow-right-square"></i> o A/D
+            &nbsp; | &nbsp; <b>Móvil:</b> Botones de abajo</p>
+          <button class="btn" id="playBtn"><i class="bi bi-emoji-sunglasses-fill"></i> Empezar</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <div class="legend">
+        <span class="chip"><span class="qs"></span> Morado = <b>superposición</b></span>
+        <span class="chip"><span class="qb"></span> Azul = estado 0</span>
+        <span class="chip"><span class="qr"></span> Rojo = estado 1</span>
+        <span class="chip"><i class="bi bi-clock"></i>60 s por partida</span>
+      </div>
+      <div class="mobile" aria-label="Controles móviles">
+        <button class="joy" id="leftBtn" aria-label="Izquierda"><i class="bi bi-arrow-left-square"></i></button>
+        <button class="joy" id="rightBtn" aria-label="Derecha"><i class="bi bi-arrow-right-square"></i></button>
+      </div>
+    </div>
+  </div>
+
+  <audio id="sCatch">
+    <source src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABYBAGZAAAAA/////wAAAP7+/v7+/v7+"
+      type="audio/wav">
+  </audio>
+  <audio id="sBell">
+    <source src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABYBAGZAAAAA/////wAAAP7+/v7+/v7+"
+      type="audio/wav">
+  </audio>
+
+  <script>
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+
+    const UI = {
+      score: document.getElementById('score'),
+      blueC: document.getElementById('blueC'),
+      redC: document.getElementById('redC'),
+      timer: document.getElementById('timer'),
+      startBtn: document.getElementById('startBtn'),
+      resetBtn: document.getElementById('resetBtn'),
+      soundChk: true,
+      overlay: document.getElementById('overlay'),
+      playBtn: document.getElementById('playBtn'),
+      leftBtn: document.getElementById('leftBtn'),
+      rightBtn: document.getElementById('rightBtn'),
+      stage: document.getElementById('stage'),
+      sCatch: document.getElementById('sCatch'),
+      sBell: document.getElementById('sBell'),
+    }
+
+    const GAME = {
+      running: false,
+      timeLeft: 60,
+      total: 0,
+      blue: 0,
+      red: 0,
+      frame: 0,
+      items: [], 
+      keys: { left: false, right: false },
+      floatLabels: [], 
+    }
+
+    const player = { x: canvas.width / 2, y: canvas.height - 40, w: 130, h: 18, speed: 6 }
+
+    function reset(full = true) {
+      GAME.running = false; GAME.timeLeft = 60; GAME.total = 0; GAME.blue = 0; GAME.red = 0; GAME.frame = 0; GAME.items = []; GAME.floatLabels = [];
+      player.x = canvas.width / 2;
+      updateHUD();
+      if (full) showWelcome();
+    }
+
+    function updateHUD() {
+      UI.score.textContent = `Total medidos: ${GAME.total}`;
+      UI.blueC.textContent = `Azul (0): ${GAME.blue}`;
+      UI.redC.textContent = `Rojo (1): ${GAME.red}`;
+      UI.timer.textContent = `Tiempo: ${GAME.timeLeft} s`;
+    }
+
+    function showWelcome() {
+      UI.overlay.style.display = 'grid';
+      UI.overlay.querySelector('.card').innerHTML = `
+        <h2>Superposición y Medición</h2>
+        <p>Los qubits caen en <b>superposición</b> (bolas moradas).</p>
+        <p>Al atraparlos, <b>medimos</b> y se vuelven <span style="color:#6ec2ff">Azul (0)</span> o <span style="color:#ff8a8a">Rojo (1)</span>.</p>
+        <br>
+        <p><b>PC:</b> Flechas  <i class="bi bi-arrow-left-square"></i>  <i class="bi bi-arrow-right-square"></i> o A/D &nbsp; | &nbsp; <b>Móvil:</b> Botones de abajo</p>
+        <br>
+        <br>
+        <button class="btn" id="playBtn"><i class="bi bi-emoji-sunglasses-fill"></i> Empezar</button>
+      `;
+      UI.overlay.querySelector('#playBtn').addEventListener('click', () => { UI.overlay.style.display = 'none'; start(); });
+    }
+
+    function spawnQubit() {
+      const r = rand(10, 14);
+      GAME.items.push({ state: 'superposed', color: null, x: rand(20, canvas.width - 20), y: -20, r, vy: rand(2.2, 3.2), phase: Math.random() * Math.PI * 2 });
+    }
+
+    function update() {
+      GAME.frame++;
+      if (GAME.frame % 45 === 0) spawnQubit();
+
+      if (GAME.keys.left) player.x -= player.speed;
+      if (GAME.keys.right) player.x += player.speed;
+      player.x = clamp(player.x, player.w / 2, canvas.width - player.w / 2);
+
+      for (const it of GAME.items) {
+        it.y += it.vy;
+        if (it.state === 'superposed') {
+          it.x += Math.sin(it.phase + GAME.frame * 0.06) * 0.4;
+        }
+      }
+
+      // colisiones y limpieza de la bolita
+      GAME.items = GAME.items.filter(it => {
+        const hitY = it.y + it.r >= player.y && it.y - it.r <= player.y + player.h;
+        const hitX = Math.abs(it.x - player.x) < (player.w / 2 + it.r);
+        if (hitY && hitX) { onMeasure(it); return false; }
+        return it.y - it.r <= canvas.height;
+      });
+
+      // Actua los label flotantes 
+      GAME.floatLabels = GAME.floatLabels.filter(lbl => {
+        lbl.t += 1; lbl.y -= 0.6; lbl.alpha -= 0.02; return lbl.alpha > 0;
+      });
+    }
+
+    function onMeasure(it) {
+      // Colapso: decide 0 (azul) o 1 (rojo)
+      const color = Math.random() < 0.5 ? 'blue' : 'red';
+      GAME.total += 1;
+      if (color === 'blue') GAME.blue += 1; else GAME.red += 1;
+      play(UI.sCatch);
+      flash(color === 'blue' ? '#4ea8ff77' : '#ff6b6b77');
+      GAME.floatLabels.push({ text: color === 'blue' ? '0' : '1', x: player.x, y: player.y - 8, alpha: 1 });
+      if (GAME.total > 0 && GAME.total % 5 === 0) play(UI.sBell);
+      updateHUD();
+    }
+
+    function render() {
+      // fondo
+      ctx.fillStyle = '#0a1024'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+      const g = ctx.createRadialGradient(canvas.width / 2, -60, 40, canvas.width / 2, -60, 480);
+      g.addColorStop(0, 'rgba(110,231,255,0.2)'); g.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = g; ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = 'rgba(255,255,255,.7)';
+      for (let i = 0; i < 50; i++) { ctx.fillRect((i * 67 + GAME.frame * 0.25) % canvas.width, i * 11 % canvas.height, 1, 1); }
+
+      // qubits
+      for (const it of GAME.items) {
+        const c1 = '#fff';
+        const c2 = it.state === 'superposed' ? '#9b8cff' : (it.color === 'blue' ? '#4ea8ff' : '#ff6b6b');
+        const grad = ctx.createRadialGradient(it.x - 3, it.y - 3, 1, it.x, it.y, it.r);
+        grad.addColorStop(0, c1); grad.addColorStop(1, c2);
+        ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(it.x, it.y, it.r, 0, Math.PI * 2); ctx.fill();
+        if (it.state === 'superposed') {
+          // Un pequeño "?" translúcido para señalar que aún no sabemos si es 0 o 1
+          ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.font = 'bold 10px system-ui'; ctx.fillText('?', it.x - 3, it.y + 3);
+        }
+      }
+
+      // jugador
+      ctx.fillStyle = 'rgba(255,255,255,.18)';
+      roundRect(ctx, player.x - player.w / 2, player.y, player.w, player.h, 8, true, false);
+      ctx.strokeStyle = '#6ee7ff'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(player.x - 22, player.y + 2); ctx.lineTo(player.x + 22, player.y + 2); ctx.stroke();
+
+      // labels de 0/1
+      for (const l of GAME.floatLabels) {
+        ctx.globalAlpha = l.alpha; ctx.fillStyle = '#ffffff'; ctx.font = 'bold 18px system-ui'; ctx.fillText(l.text, l.x - 5, l.y); ctx.globalAlpha = 1;
+      }
+    }
+
+    // temporizador
+    let secondTimer = null;
+    function startTimer() {
+      clearInterval(secondTimer);
+      secondTimer = setInterval(() => {
+        if (!GAME.running) return;
+        GAME.timeLeft -= 1; updateHUD();
+        if (GAME.timeLeft <= 0) { GAME.timeLeft = 0; gameOver(); }
+      }, 1000);
+    }
+
+    function gameOver() {
+      GAME.running = false;
+      UI.overlay.style.display = 'grid';
+      UI.overlay.querySelector('.card').innerHTML = `
+        <h2>¡Tiempo!</h2>
+        <p>Mediciones totales: <b>${GAME.total}</b></p>
+        <p>Azules (0): <b style="color:#6ec2ff">${GAME.blue}</b> &nbsp;|&nbsp; Rojos (1): <b style="color:#ff8a8a">${GAME.red}</b></p>
+        <br>
+        <p style="opacity:.9"><i class="bi bi-lightbulb-fill"></i> <i>Antes de medir, el qubit está en superposición; al medir, colapsa a 0 o 1</i>.</p>
+        <br><br>
+
+        <button class="btn" id="againBtn"><i class="bi bi-arrow-repeat"></i> Jugar de nuevo</button>
+      `;
+      UI.overlay.querySelector('#againBtn').addEventListener('click', () => { reset(true); });
+    }
+
+    // Bucle
+    let last = 0, acc = 0, step = 1000 / 60;
+    function loop(ts) {
+      if (!GAME.running) { requestAnimationFrame(loop); return; }
+      if (!last) last = ts; const dt = ts - last; last = ts; acc += dt;
+      while (acc >= step) { update(); acc -= step; }
+      render();
+      requestAnimationFrame(loop);
+    }
+
+    // Utilidades
+    function rand(a, b) { return Math.random() * (b - a) + a; }
+    function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+    function roundRect(ctx, x, y, w, h, r, fill, stroke) {
+      if (w < 2 * r) r = w / 2; if (h < 2 * r) r = h / 2; ctx.beginPath(); ctx.moveTo(x + r, y);
+      ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); if (fill) ctx.fill(); if (stroke) ctx.stroke();
+    }
+    function flash(color = '#ffffff66') { const el = document.createElement('div'); el.style.position = 'absolute'; el.style.inset = '0'; el.style.background = color; el.style.pointerEvents = 'none'; el.style.opacity = '0'; UI.stage.appendChild(el); el.animate([{ opacity: 0 }, { opacity: 1 }, { opacity: 0 }], { duration: 350 }).onfinish = () => el.remove(); }
+    function play(a) { if (UI.soundChk?.checked) { try { a.currentTime = 0; a.play(); } catch { } } }
+
+    // Controles
+    window.addEventListener('keydown', e => {
+      if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') GAME.keys.left = true;
+      if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') GAME.keys.right = true;
+      if (e.key === 'p' || e.key === 'P') toggleRun();
+    });
+    window.addEventListener('keyup', e => {
+      if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') GAME.keys.left = false;
+      if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') GAME.keys.right = false;
+    });
+    UI.leftBtn.addEventListener('touchstart', () => { GAME.keys.left = true; });
+    UI.leftBtn.addEventListener('touchend', () => { GAME.keys.left = false; });
+    UI.rightBtn.addEventListener('touchstart', () => { GAME.keys.right = true; });
+    UI.rightBtn.addEventListener('touchend', () => { GAME.keys.right = false; });
+
+    UI.startBtn.addEventListener('click', toggleRun);
+    UI.resetBtn.addEventListener('click', () => { reset(true); });
+
+    function toggleRun() { if (GAME.timeLeft <= 0) return; GAME.running = !GAME.running; if (GAME.running) { startTimer(); requestAnimationFrame(loop); UI.overlay.style.display = 'none'; } else { UI.overlay.style.display = 'grid'; UI.overlay.querySelector('.card').innerHTML = `<h2>PAUSA</h2><p>Pulsa Jugar para continuar</p><br><br><button class=\"btn\" id=\"resumeBtn\"><i class=\"bi bi-play-circle\"></i> Jugar</button>`; UI.overlay.querySelector('#resumeBtn').addEventListener('click', () => { UI.overlay.style.display = 'none'; toggleRun(); }); } }
+    function start() { if (GAME.running) return; GAME.running = true; startTimer(); requestAnimationFrame(loop); }
+
+    // Inicio
+    reset(true);
+  </script>
+</body>
+
+</html>
